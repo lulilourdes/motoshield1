@@ -1,22 +1,26 @@
-from flask import Flask, request, jsonify
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import psycopg2
 import random
 import os
-# 1. CREA LA INSTANCIA DE LA APP
-app = Flask(__name__)
-# 2. ACTIVA CORS
+
+# 1. DEFINIR LAS RUTAS DE CARPETAS (Para que no falle el TemplateNotFound)
+# Esto apunta a tu carpeta de submódulo 'motoshield-frontend/src'
+base_dir = os.path.dirname(os.path.abspath(__file__))
+template_dir = os.path.join(base_dir, 'motoshield-frontend', 'src')
+
+# 2. CREAR UNA SOLA INSTANCIA DE LA APP
+app = Flask(__name__, 
+            template_folder=template_dir, 
+            static_folder=template_dir) # static_folder ayuda a encontrar CSS/JS
+
+# 3. ACTIVAR CORS
 CORS(app)
-from flask import Flask, render_template
 
-# ... (tus líneas anteriores)
-
-app = Flask(__name__, template_folder='motoshield-frontend/src')
-
+# 4. RUTA PRINCIPAL
 @app.route('/')
 def index():
     return render_template('menu.html')
-# 3. AHORA SI, TUS RUTAS (El decorador ya reconocerá 'app')
 @app.route('/api/captcha', methods=['GET'])
 def generar_captcha():
     num1 = random.randint(1, 10)
