@@ -7,7 +7,15 @@ import os
 app = Flask(__name__)
 # 2. ACTIVA CORS
 CORS(app)
+from flask import Flask, render_template
 
+# ... (tus líneas anteriores)
+
+app = Flask(__name__, template_folder='motoshield-frontend/src')
+
+@app.route('/')
+def index():
+    return render_template('menu.html')
 # 3. AHORA SI, TUS RUTAS (El decorador ya reconocerá 'app')
 @app.route('/api/captcha', methods=['GET'])
 def generar_captcha():
