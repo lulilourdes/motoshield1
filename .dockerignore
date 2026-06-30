@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.git
+node_modules
+motoshield-frontend/node_modules
