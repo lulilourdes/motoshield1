@@ -128,6 +128,49 @@ def obtener_productos_almacen():
     except Exception as error:
         return jsonify({"error": str(error)}), 500
 
+@app.route('/api/motos-activas', methods=['GET'])
+def motos_activas():
+    try:
+        conexion = obtener_conexion()
+        cursor = conexion.cursor()
+
+        cursor.execute("""
+            SELECT
+                p.nombre_completo,
+                d.id_gps
+            FROM perfiles_estudiantes p
+            JOIN ventas_suscripciones v
+                ON p.id_estudiante=v.id_estudiante
+            JOIN dispositivos_gps d
+                ON d.estado_dispositivo='instalado'
+            ORDER BY p.nombre_completo;
+        """)
+
+        filas = cursor.fetchall()
+
+        lista=[]
+
+        for fila in filas:
+
+            lista.append({
+
+                "nombre":fila[0],
+                "gps":fila[1],
+                "estado":"EN CUMPLIMIENTO",
+                "lat":"-21.5284",
+                "lng":"-64.7298"
+
+            })
+
+        cursor.close()
+        conexion.close()
+
+        return jsonify(lista)
+
+    except Exception as e:
+
+        return jsonify({"error":str(e)}),500
+
 # 5. RUTA DE VENTAS: REGISTRAR UNA TRANSACCIÓN
 @app.route('/api/registrar-venta', methods=['POST'])
 def registrar_venta():
@@ -187,22 +230,31 @@ def login():
         datos = request.json
         usuario = datos.get('usuario')
         clave = datos.get('clave')
+        rol_seleccionado = datos.get('rol_seleccionado') # Nuevo: recibimos el rol del select
 
-        conexion = obtener_conexion() # <-- Abrimos conexión aquí
+        conexion = obtener_conexion()
         cursor = conexion.cursor()
         
+        # Consultamos el usuario y su rol real en la BD
         cursor.execute("SELECT nombre, rol FROM usuarios WHERE usuario = %s AND clave = %s", (usuario, clave))
         resultado = cursor.fetchone()
         
         cursor.close()
-        conexion.close() # <-- Cerramos conexión
+        conexion.close()
 
         if resultado:
-            return jsonify({
-                "valido": True,
-                "nombre": resultado[0],
-                "rol": resultado[1]
-            }), 200
+            nombre_db = resultado[0]
+            rol_db = resultado[1]
+            
+            # VALIDACIÓN DE SEGURIDAD: Comparar el rol seleccionado con el de la BD
+            if rol_db == rol_seleccionado:
+                return jsonify({
+                    "valido": True,
+                    "nombre": nombre_db,
+                    "rol": rol_db
+                }), 200
+            else:
+                return jsonify({"valido": False, "mensaje": "Acceso denegado: El tipo de cuenta no coincide con su perfil."}), 403
         else:
             return jsonify({"valido": False, "mensaje": "Usuario o contraseña incorrectos"}), 401
     except Exception as e:
